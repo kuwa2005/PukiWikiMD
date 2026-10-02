@@ -1,0 +1,17 @@
+# Apache .htaccess for PukiWiki2026 (repository / deploy root)
+#
+# デプロイ単位: index.php + pukiwiki/ のみを公開する想定。
+# 開発用ディレクトリ（git checkout 全体を DocumentRoot にした場合の保護）
+
+## Access control by Require directive
+## needs 'AllowOverride Limit' at httpd.conf
+
+# Prohibit direct access to .htaccess, .htpasswd or others
+<FilesMatch "^\.ht">
+  Require all denied
+</FilesMatch>
+
+# 開発用ディレクトリへの直接アクセスを拒否（git checkout 全体を DocumentRoot にした場合）
+<IfModule mod_authz_core.c>
+  RedirectMatch 403 ^/\.github(/|$)
+</IfModule>

@@ -1,0 +1,26 @@
+<?php
+// PukiWiki - Yet another WikiWikiWeb clone.
+// $Id: index.php,v 1.9 2006/05/13 07:39:49 henoheno Exp $
+// Copyright (C) 2001-2006 PukiWiki Developers Team
+// License: GPL v2 or (at your option) any later version
+
+// Error reporting (SEC-L01: production default is silent; enable PKWK_DEBUG for dev)
+if (defined('PKWK_DEBUG') && PKWK_DEBUG) {
+	error_reporting(E_ALL);
+} else {
+	error_reporting(0);
+}
+
+// Special
+//define('PKWK_READONLY',  1);
+//define('PKWK_SAFE_MODE', 1);
+//define('PKWK_OPTIMISE',  1);
+//define('TDIARY_THEME',   'digital_gadgets');
+
+// Directory definition
+// DATA_HOME: Wiki 本体（lib, plugin, skin, wiki 等）のルート。末尾スラッシュ必須。
+define('DATA_HOME', __DIR__ . '/pukiwiki/');
+define('LIB_DIR',     DATA_HOME . 'lib/');
+
+require(LIB_DIR . 'pukiwiki.php');
+?>

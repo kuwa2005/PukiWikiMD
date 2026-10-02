@@ -1,0 +1,42 @@
+# 機密・環境依存
+.env
+.env.*
+!.env.example
+pukiwiki/pukiwiki.ini.php
+
+# ページ本文は Markdown として git 管理する。旧 hex .txt は追わない。
+pukiwiki/wiki/**
+!pukiwiki/wiki/**/
+!pukiwiki/wiki/**/*.md
+!pukiwiki/wiki/.htaccess
+!pukiwiki/wiki/index.html
+
+# ランタイム生成物
+pukiwiki/cache/*
+!pukiwiki/cache/.htaccess
+!pukiwiki/cache/index.html
+pukiwiki/backup/*
+!pukiwiki/backup/.htaccess
+!pukiwiki/backup/index.html
+pukiwiki/attach/*
+!pukiwiki/attach/.htaccess
+!pukiwiki/attach/index.html
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/
+
+# PHP / ツール
+/vendor/
+composer.phar
+.phpunit.result.cache
+
+# ログ・一時ファイル
+*.log
+tmp/
+temp/

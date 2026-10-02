@@ -1,0 +1,6 @@
+---
+frozen: true
+---
+| [_page] | [Status] | [Severity] | [Category] | [Proposer] | [Summary] | h |
+| --- | --- | --- | --- | --- | --- | --- |
+| [_page,Status] | [Status] | [Severity,Status] | [Category,Status] | [Proposer,Status] | [Summary,Status] |  |

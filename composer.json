@@ -1,0 +1,10 @@
+{
+    "name": "pukiwikimd/pukiwikimd",
+    "description": "PukiWikiMD — Markdown-file wiki based on PukiWiki2026",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=8.1",
+        "league/commonmark": "^2.7",
+        "symfony/yaml": "^7.0"
+    }
+}

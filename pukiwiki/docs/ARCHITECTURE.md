@@ -1,0 +1,154 @@
+# ARCHITECTURE — 大規模改造 設計メモ
+
+本ドキュメントは pukiwiki2026 における**非公式・大規模改造**の設計判断を記録するテンプレートです。  
+実装に合わせて随時更新してください。
+
+---
+
+## 1. 概要
+
+| 項目 | 内容 |
+|------|------|
+| プロジェクト名 | pukiwiki2026 |
+| ベース | PukiWiki 1.5.4 UTF-8 |
+| 目的 | （例: 社内 Wiki / 公開サイト / プラグイン拡張基盤 など） |
+| 対象 PHP | （例: 8.1 〜 8.3） |
+| 対象 Web サーバー | （例: Apache 2.4 + mod_php / nginx + php-fpm） |
+
+### 1.1 改造のスコープ
+
+- [ ] コア（`lib/`）改修
+- [ ] 既存プラグイン改修（`plugin/`）
+- [ ] 新規プラグイン追加
+- [ ] スキン・フロント（`skin/`）
+- [ ] 認証・権限（`lib/auth.php` 周辺）
+- [ ] 外部連携（API / SSO / Webhook 等）
+- [ ] その他: _______________
+
+### 1.2 非スコープ（やらないこと）
+
+- （例: 公式互換の 100% 維持は求めない / モバイル専用 skin は対象外 等）
+
+---
+
+## 2. 現状アーキテクチャ（PukiWiki 1.5.4 + pukiwiki/ 集約）
+
+```
+Browser
+   │
+   ▼
+index.php（DATA_HOME = ./pukiwiki/）
+   │
+   └── pukiwiki/
+         ├── lib/init.php（bootstrap, S_VERSION）
+         │      ├── pukiwiki.ini.php
+         │      ├── lib/perm.php（起動時パーミッションチェック・Unix/Linux）
+         │      └── lib/pukiwiki.php（メイン処理）
+         ├── plugin/*.inc.php（機能拡張）
+         ├── skin/*.skin.php（表示）
+         └── wiki/*.txt（ページ本文・データ）
+```
+
+**デプロイ / バックアップ単位:** リポジトリ root の `index.php` と `pukiwiki/` ディレクトリ（`docs/`・`tools/` を含む）。
+
+### 2.1 主要ディレクトリ
+
+| パス | 役割 |
+|------|------|
+| `index.php` | エントリポイント（`DATA_HOME` 定義のみ） |
+| `pukiwiki/lib/` | コアライブラリ、Wiki エンジン |
+| `pukiwiki/lib/perm.php` | 起動時ディレクトリパーミッションチェック（Unix/Linux 本番向け） |
+| `pukiwiki/plugin/` | プラグイン（`plugin=xxx` で呼び出し） |
+| `pukiwiki/skin/` | 表示テンプレート・CSS |
+| `pukiwiki/wiki/` | ページデータ（テキスト） |
+| `pukiwiki/attach/` | 添付ファイル |
+| `pukiwiki/cache/` | キャッシュ（ランタイム） |
+| `pukiwiki/backup/` | ページバックアップ（ランタイム） |
+| `pukiwiki/docs/` | 設計・デプロイ文書 |
+| `pukiwiki/tools/` | セットアップ支援 |
+| `pukiwiki/README.txt` 等 | 公式 PukiWiki 同梱（`INSTALL.txt`, `COPYING.txt`, `UPDATING.txt`, `*.en.txt.zip`, `wiki.en.zip`） |
+
+---
+
+## 3. 改造方針
+
+### 3.1 レイヤリング
+
+| レイヤ | 方針 | 備考 |
+|--------|------|------|
+| 設定 | `pukiwiki/pukiwiki.ini.php` / `.env` に集約 | 秘密情報は git 除外 |
+| 拡張 | 新規は `pukiwiki/plugin/` 優先 | コア触る理由を必ず記載 |
+| 表示 | `pukiwiki/skin/` または専用 CSS | |
+| データ | `pukiwiki/wiki/` 構造変更は慎重に | マイグレーション手順を別途 |
+
+### 3.2 互換性
+
+- 上流プラグイン互換: （維持 / 部分 / 破棄）
+- URL 形式: （デフォルト `index.php?` を維持 等）
+- 文字コード: UTF-8 固定
+
+---
+
+## 4. 機能別設計（記入用）
+
+### 4.1 機能 A: _______________
+
+- **要件**:
+- **変更ファイル**:
+- **API / データ**:
+- **セキュリティ**:
+- **テスト観点**:
+
+### 4.2 起動時ディレクトリパーミッションチェック
+
+- **要件**: Unix/Linux 本番で書き込みディレクトリ自身の mode のみ確認。不適切な場合のみ chmod + 配下再帰修正。Windows ではスキップ。
+- **変更ファイル**: `lib/perm.php`（新規）, `lib/init.php`（呼び出し）, `pukiwiki.ini.php.example`
+- **対象定数**: `DATA_DIR`, `DIFF_DIR`, `BACKUP_DIR`, `CACHE_DIR`, `UPLOAD_DIR`, `COUNTER_DIR`
+- **設定**: `$perm_check_on_boot`, `$perm_dir_mode`, `$perm_file_mode`, `$perm_acceptable_dir_modes`, `$perm_check_dirs_extra`
+- **テスト観点**: 許容 mode（0777/0775/0770）では配下に触れないこと。0700 等では修正されること。Windows でスキップされること。
+
+---
+
+## 5. 認証・セキュリティ
+
+| 項目 | 現状 / 予定 |
+|------|-------------|
+| 編集権限 | （Basic 認証 / セッション / カスタム） |
+| CSRF 対策 | PukiWiki 標準 + （追加施策） |
+| ファイルアップロード | `attach/` 制限 |
+| 本番設定 | `lib/init.php` のデバッグ表示オフ等 |
+| ディレクトリ保護 | `.htaccess` は**任意・推奨**（Apache）。無くても Wiki 本体は動作。詳細: [DEPLOY.md §4.5](DEPLOY.md#45-htaccess任意推奨) |
+| 起動時パーミッション | Unix/Linux 本番で `lib/perm.php` が書き込みディレクトリ mode を確認・修正（不適切な場合のみ配下再帰）。Windows ではスキップ |
+
+### 5.1 `.htaccess` の位置付け
+
+- **ルート `.htaccess`:** リポジトリ root を DocumentRoot にした開発時の `.github/` 等の遮断。
+- **`pukiwiki/.htaccess`:** 設定ファイル（`*.ini.php` 等）と開発用サブディレクトリ（`docs/`, `tools/`）の直接アクセス拒否。
+- **各データディレクトリ**（`attach/`, `cache/`, `backup/` 等）: 直接 HTTP アクセス拒否を**推奨**。`wiki/` も DocumentRoot 配下なら同様（[SECURITY-AUDIT.md](SECURITY-AUDIT.md) SEC-H05）。
+- nginx 等では vhost / `location deny` で同等設定。本番で開発用ディレクトリを配置しない方式でもよい。
+
+---
+
+## 6. パフォーマンス・運用
+
+- キャッシュ戦略: （`cache/` / OPcache / 逆プロキシ）
+- バックアップ: [BACKUP.md](BACKUP.md) — `index.php` + `pukiwiki/` のコピー
+- ログ: （Web サーバー / アプリログ）
+
+---
+
+## 7. 決定ログ（ADR 簡易版）
+
+| 日付 | 決定 | 理由 | 代替案 |
+|------|------|------|--------|
+| 2026-06-07 | git タグ `upstream-1.5.4-utf8` を diff 基準に | vendor/ コピー不要 | submodule / vendor ディレクトリ |
+| 2026-06-07 | 起動時パーミッションチェック（`lib/perm.php`） | Unix/Linux 本番の mode 不整合を起動時に自動修正 | 手動 chmod のみ / cron 定期修正 |
+
+---
+
+## 8. 関連ドキュメント
+
+- [UPSTREAM.md](UPSTREAM.md) — 上流取得・diff
+- [DEPLOY.md](DEPLOY.md) — デプロイ手順
+- [BACKUP.md](BACKUP.md) — バックアップ・リストア
+- [CHANGELOG.md](../../CHANGELOG.md) — 変更履歴

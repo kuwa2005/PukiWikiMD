@@ -1,0 +1,16 @@
+---
+frozen: true
+---
+# [Summary]
+- ページ:     [_refer]
+- 投稿者:     [Proposer]
+- 優先順位:   [Severity]
+- 状態:       [Status]
+- カテゴリー: [Category]
+- 投稿日:     [_date]
+- バージョン: [Version]
+
+## メッセージ
+[Messages]
+---
+
