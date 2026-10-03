@@ -1,0 +1,10 @@
+services:
+  web:
+    build: .
+    container_name: pukiwikimd
+    ports:
+      - "80:80"
+    volumes:
+      # Wiki データ（wiki/cache/backup/attach 等）も含め、このリポジトリをそのまま使う
+      - .:/var/www/html
+    restart: unless-stopped
