@@ -1,6 +1,6 @@
 # PukiWikiMD
 
-**ページを Markdown ファイルとして保存する Wiki** です。土台は [PukiWiki2026](https://github.com/kuwa2005/PukiWiki2026)（PukiWiki 1.5.4 UTF-8 + 認証・CSRF などの強化）です。旧 PukiWiki 記法（`*見出し` や `''太字''`、`#plugin`）は解釈しません。
+**ページを Markdown ファイルとして保存する Wiki** です。土台は [PukiWiki2026](https://github.com/kuwa2005/PukiWiki2026)（PukiWiki 1.5.4 UTF-8 + 認証・CSRF などの強化）です。旧 PukiWiki 記法（`*見出し` や `''太字''`）は解釈しません。ブロックプラグインだけ例外で、行頭が `#plugin` / `#plugin(引数)`（`#` が1個で直後にスペースなし）のとき発動します。`# 見出し` や `##` / `###` は Markdown のままです。
 
 表示は [CommonMark](https://spec.commonmark.org/) と [GitHub Flavored Markdown](https://github.github.com/gfm/)（表、取り消し線、タスクリスト、自動リンク）に、脚注・定義リスト・見出し属性・ハイライト・YAML front matter を足しています。ライブラリは `league/commonmark` 2.10 です。
 

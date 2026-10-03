@@ -6,8 +6,11 @@ const path = require('path')
 
 const USER = process.env.PW_USER || 'editor'
 const PASS = process.env.PW_PASS || 'e2e-test-pass'
-const PAGE_NAME = 'PwDropMdTest'
-const MD_BASENAME = `${PAGE_NAME}.md`
+// FrontPage は frozen のため、リンク追記の検証は非凍結ページで行う
+const PARENT_PAGE = '議事録'
+const LEAF_NAME = 'PwDropMdTest'
+const FULL_PAGE = `${PARENT_PAGE}/${LEAF_NAME}`
+const MD_BASENAME = `${LEAF_NAME}.md`
 
 /**
  * @param {import('@playwright/test').Page} page
@@ -49,38 +52,55 @@ async function login(page) {
 		page.waitForURL((url) => !url.href.includes('plugin=loginform'), { timeout: 20_000 }),
 		page.locator('input[type="submit"].loginbutton, input[type="submit"]').first().click(),
 	])
-	// 初期パスワード変更が挟まる場合はスキップ不可なので、変更済み前提
 	if (page.url().includes('changepassword')) {
 		throw new Error('Password change required; set a non-default PW_PASS for e2e')
 	}
-	await page.goto('/')
-	await expect(page.locator('h1.title, .title').first()).toBeVisible()
+	await page.goto('/?' + encodeURIComponent(PARENT_PAGE))
+	await expect(page.locator('h1.title, .title').first()).toContainText(PARENT_PAGE)
 }
 
-test.describe('MD drop creates wiki page', () => {
+function wikiPathForPage(pageName) {
+	return path.join(__dirname, '..', 'pukiwiki', 'wiki', ...pageName.split('/')) + '.md'
+}
+
+function stripParentLink() {
+	const parentFile = wikiPathForPage(PARENT_PAGE)
+	if (!fs.existsSync(parentFile)) return
+	let src = fs.readFileSync(parentFile, 'utf8')
+	const next = src
+		.replace(new RegExp(`\\n?\\[\\[${FULL_PAGE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]\\]\\n?`), '\n')
+		.replace(/\n{3,}/g, '\n\n')
+	if (next !== src) {
+		fs.writeFileSync(parentFile, next, 'utf8')
+	}
+}
+
+test.describe('MD drop creates child wiki page', () => {
 	/** @type {string} */
 	let tmpMd
 
 	test.beforeAll(() => {
 		tmpMd = path.join(os.tmpdir(), MD_BASENAME)
-		fs.writeFileSync(tmpMd, `# ${PAGE_NAME}\n\ncreated by playwright drop\n`, 'utf8')
-		const wikiFile = path.join(__dirname, '..', 'pukiwiki', 'wiki', MD_BASENAME)
+		fs.writeFileSync(tmpMd, `# ${LEAF_NAME}\n\ncreated by playwright drop\n`, 'utf8')
+		const wikiFile = wikiPathForPage(FULL_PAGE)
 		if (fs.existsSync(wikiFile)) {
 			fs.unlinkSync(wikiFile)
 		}
+		stripParentLink()
 	})
 
 	test.afterAll(() => {
 		try {
 			fs.unlinkSync(tmpMd)
 		} catch (_) {}
-		const wikiFile = path.join(__dirname, '..', 'pukiwiki', 'wiki', MD_BASENAME)
+		const wikiFile = wikiPathForPage(FULL_PAGE)
 		try {
 			fs.unlinkSync(wikiFile)
 		} catch (_) {}
+		stripParentLink()
 	})
 
-	test('login → drop .md → navigate to new page', async ({ page }) => {
+	test('login → drop .md on parent → create child and append [[child]] link', async ({ page }) => {
 		await login(page)
 
 		/** @type {string[]} */
@@ -98,7 +118,10 @@ test.describe('MD drop creates wiki page', () => {
 		await dropMarkdownFile(page, tmpMd, MD_BASENAME)
 
 		await page.waitForURL(
-			(url) => url.href.includes(PAGE_NAME) || url.href.includes(encodeURIComponent(PAGE_NAME)),
+			(url) =>
+				url.href.includes(LEAF_NAME) ||
+				url.href.includes(encodeURIComponent(FULL_PAGE)) ||
+				url.href.includes(encodeURIComponent(LEAF_NAME)),
 			{ timeout: 20_000 }
 		)
 
@@ -108,12 +131,17 @@ test.describe('MD drop creates wiki page', () => {
 		)
 
 		await expect(page.locator('body')).toContainText('created by playwright drop')
-		expect(fs.existsSync(path.join(__dirname, '..', 'pukiwiki', 'wiki', MD_BASENAME))).toBeTruthy()
+		await expect(page.locator('h1.title, .title').first()).toContainText(FULL_PAGE)
+		expect(fs.existsSync(wikiPathForPage(FULL_PAGE))).toBeTruthy()
+
+		const parentSrc = fs.readFileSync(wikiPathForPage(PARENT_PAGE), 'utf8')
+		expect(parentSrc).toContain(`[[${FULL_PAGE}]]`)
 
 		if (postBodies.length > 0) {
 			const json = JSON.parse(postBodies[postBodies.length - 1])
 			expect(json.ok).toBeTruthy()
-			expect(json.page).toBe(PAGE_NAME)
+			expect(json.page).toBe(FULL_PAGE)
+			expect(json.parent_link && json.parent_link.ok).toBeTruthy()
 		}
 	})
 })

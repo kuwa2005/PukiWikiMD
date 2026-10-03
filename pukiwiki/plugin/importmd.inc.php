@@ -47,9 +47,15 @@ function plugin_importmd_api_action()
 	}
 
 	$orig = isset($file['name']) ? $file['name'] : '';
-	$page = plugin_importmd_pagename_from_filename($orig);
-	if ($page === '') {
+	$leaf = plugin_importmd_pagename_from_filename($orig);
+	if ($leaf === '') {
 		plugin_importmd_json(array('ok' => FALSE, 'error' => 'Markdown ファイル（.md）のみ作成できます'));
+	}
+
+	// ドロップ先ページの子として作成（例: 議事録 + aaaa.md → 議事録/aaaa）
+	$page = plugin_importmd_resolve_child_pagename($leaf, $refer);
+	if ($page === '') {
+		plugin_importmd_json(array('ok' => FALSE, 'error' => 'ページ名として使えません: ' . $leaf));
 	}
 
 	$content = file_get_contents($file['tmp_name']);
@@ -57,19 +63,20 @@ function plugin_importmd_api_action()
 		plugin_importmd_json(array('ok' => FALSE, 'error' => 'ファイルの読み込みに失敗しました'));
 	}
 
-	$result = plugin_importmd_create_page($page, $content, $refer);
+	$result = plugin_importmd_create_page($page, $content, $refer, $leaf);
 	plugin_importmd_json($result);
 }
 
 /**
  * Create a new wiki page from Markdown text.
  *
- * @param string $page
+ * @param string $page Full page name
  * @param string $content
- * @param string $refer Current page (informational)
+ * @param string $refer Parent/context page
+ * @param string $leaf_title Optional leaf name for empty-file heading
  * @return array JSON-serializable result
  */
-function plugin_importmd_create_page($page, $content, $refer = '')
+function plugin_importmd_create_page($page, $content, $refer = '', $leaf_title = '')
 {
 	if (! is_pagename($page) || ! is_pagename_bytes_within_hard_limit($page)) {
 		return array('ok' => FALSE, 'error' => 'ページ名として使えません: ' . $page);
@@ -99,7 +106,8 @@ function plugin_importmd_create_page($page, $content, $refer = '')
 	$content = str_replace("\r\n", "\n", $content);
 	$content = str_replace("\r", "\n", $content);
 	if (trim($content) === '') {
-		$content = '# ' . $page . "\n";
+		$heading = ($leaf_title !== '') ? $leaf_title : $page;
+		$content = '# ' . $heading . "\n";
 	}
 	if (substr($content, -1) !== "\n") {
 		$content .= "\n";
@@ -111,16 +119,77 @@ function plugin_importmd_create_page($page, $content, $refer = '')
 		return array('ok' => FALSE, 'error' => 'ページの保存に失敗しました');
 	}
 
+	$parent_link = plugin_importmd_append_parent_link($refer, $page);
+
 	return array(
 		'ok' => TRUE,
 		'page' => $page,
 		'uri' => get_page_uri($page, PKWK_URI_ROOT),
 		'refer' => $refer,
+		'parent_link' => $parent_link,
 	);
 }
 
 /**
- * Derive a wiki page name from an uploaded .md filename.
+ * Append [[child]] to the drop-target (parent) page.
+ *
+ * @param string $refer Parent page name
+ * @param string $child_page Full child page name
+ * @return array{ok:bool,skipped?:bool,already?:bool,error?:string,link?:string}
+ */
+function plugin_importmd_append_parent_link($refer, $child_page)
+{
+	if ($refer === '' || ! is_pagename($refer) || ! is_page($refer)) {
+		return array('ok' => FALSE, 'skipped' => TRUE);
+	}
+	if ($child_page === '' || ! is_pagename($child_page)) {
+		return array('ok' => FALSE, 'skipped' => TRUE);
+	}
+	if (! check_editable($refer, TRUE, FALSE)) {
+		return array('ok' => FALSE, 'error' => '親ページを編集できません');
+	}
+
+	$link = '[[' . $child_page . ']]';
+	$src = join('', get_source($refer));
+	if (strpos($src, $link) !== FALSE) {
+		return array('ok' => TRUE, 'already' => TRUE, 'link' => $link);
+	}
+
+	$src = rtrim($src);
+	if ($src !== '') {
+		$src .= "\n";
+	}
+	$src .= $link . "\n";
+	page_write($refer, $src);
+
+	return array('ok' => TRUE, 'link' => $link);
+}
+
+/**
+ * Build a child page name under $refer from a leaf name.
+ *
+ * @param string $leaf Filename without extension
+ * @param string $refer Current page
+ * @return string Empty if unusable
+ */
+function plugin_importmd_resolve_child_pagename($leaf, $refer)
+{
+	global $defaultpage;
+
+	if ($leaf === '' || ! is_pagename($leaf)) {
+		return '';
+	}
+	if ($refer !== '' && is_pagename($refer)) {
+		return get_fullname('./' . $leaf, $refer);
+	}
+	if (isset($defaultpage) && $defaultpage !== '' && is_pagename($defaultpage)) {
+		return get_fullname('./' . $leaf, $defaultpage);
+	}
+	return $leaf;
+}
+
+/**
+ * Derive a leaf wiki page name from an uploaded .md filename.
  *
  * @param string $filename
  * @return string Empty if not a usable Markdown file name

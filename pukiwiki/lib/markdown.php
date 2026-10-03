@@ -172,6 +172,11 @@ function pkwk_markdown_to_html($source, $with_ogp = FALSE)
 
 	$protected = array();
 	$text = pkwk_md_protect_code($text, $protected);
+
+	// #plugin / #plugin(args) — single "#" and no space after it (## / # title stay Markdown)
+	$plugin_html = array();
+	$text = pkwk_md_extract_block_plugins($text, $plugin_html);
+
 	$text = preg_replace_callback('/\[\[((?:(?!\]\]).)+)\]\]/u', function ($m) {
 		return pkwk_md_wikilink_to_md($m[1]);
 	}, $text);
@@ -224,10 +229,120 @@ function pkwk_markdown_to_html($source, $with_ogp = FALSE)
 		return '<p>このページの Markdown を表示できませんでした。</p>';
 	}
 
+	$html = pkwk_md_restore_block_plugins($html, $plugin_html);
 	$html = pkwk_md_insert_toc($html);
 	if ($with_ogp && function_exists('pkwk_ogp_decorate_html')) {
 		$html = pkwk_ogp_decorate_html($html);
 	}
+	return $html;
+}
+
+/**
+ * Extract PukiWiki block plugins from Markdown source.
+ *
+ * Triggers only for a single leading "#" with no following space, e.g. #calendar2
+ * or #calendar2(off). "## heading" / "# title" remain Markdown.
+ *
+ * @param string $text
+ * @param array $plugin_html Filled with rendered HTML fragments
+ * @return string
+ */
+function pkwk_md_extract_block_plugins($text, &$plugin_html)
+{
+	if (! function_exists('exist_plugin_convert') || ! function_exists('do_plugin_convert')) {
+		return $text;
+	}
+
+	$lines = explode("\n", $text);
+	$out = array();
+	$n = count($lines);
+	$i = 0;
+	$multiline_ok = ! (defined('PKWKEXP_DISABLE_MULTILINE_PLUGIN_HACK')
+		&& PKWKEXP_DISABLE_MULTILINE_PLUGIN_HACK);
+
+	while ($i < $n) {
+		$line = $lines[$i];
+
+		if ($multiline_ok &&
+			preg_match('/^#([A-Za-z][A-Za-z0-9_]*)(?:\((.*)\))?(\{\{+)\s*$/', $line, $m) &&
+			exist_plugin_convert($m[1])) {
+			$len = strlen($m[3]);
+			$body_lines = array();
+			$i++;
+			$closed = FALSE;
+			while ($i < $n) {
+				$next = $lines[$i];
+				$i++;
+				if (preg_match('/^\}{' . $len . '}\s*$/', $next)) {
+					$closed = TRUE;
+					break;
+				}
+				$body_lines[] = $next;
+			}
+			if (! $closed) {
+				// Incomplete fence: leave original lines as Markdown
+				$out[] = $line;
+				foreach ($body_lines as $bl) {
+					$out[] = $bl;
+				}
+				continue;
+			}
+			$args = isset($m[2]) ? $m[2] : '';
+			$args .= "\r" . implode("\r", $body_lines) . "\r";
+			$html = do_plugin_convert($m[1], $args);
+			$id = count($plugin_html);
+			$plugin_html[$id] = is_string($html) ? $html : '';
+			$out[] = '<!--PKWKPLUGIN:' . $id . '-->';
+			continue;
+		}
+
+		// Single-line: #name or #name(args) — not ## and not "# title"
+		if (preg_match('/^#([A-Za-z][A-Za-z0-9_]*)(?:\((.*)\))?\s*$/', $line, $m) &&
+			exist_plugin_convert($m[1])) {
+			$args = array_key_exists(2, $m) ? $m[2] : '';
+			$html = do_plugin_convert($m[1], $args);
+			$id = count($plugin_html);
+			$plugin_html[$id] = is_string($html) ? $html : '';
+			$out[] = '<!--PKWKPLUGIN:' . $id . '-->';
+			$i++;
+			continue;
+		}
+
+		$out[] = $line;
+		$i++;
+	}
+
+	return implode("\n", $out);
+}
+
+/**
+ * Restore plugin HTML that was reserved as <!--PKWKPLUGIN:n--> placeholders.
+ *
+ * @param string $html
+ * @param array $plugin_html
+ * @return string
+ */
+function pkwk_md_restore_block_plugins($html, $plugin_html)
+{
+	if (! is_array($plugin_html) || count($plugin_html) === 0) {
+		return $html;
+	}
+	$html = preg_replace_callback(
+		'/<p>\s*<!--PKWKPLUGIN:(\d+)-->\s*<\/p>/',
+		function ($m) use ($plugin_html) {
+			$id = (int)$m[1];
+			return isset($plugin_html[$id]) ? $plugin_html[$id] : $m[0];
+		},
+		$html
+	);
+	$html = preg_replace_callback(
+		'/<!--PKWKPLUGIN:(\d+)-->/',
+		function ($m) use ($plugin_html) {
+			$id = (int)$m[1];
+			return isset($plugin_html[$id]) ? $plugin_html[$id] : $m[0];
+		},
+		$html
+	);
 	return $html;
 }
 
