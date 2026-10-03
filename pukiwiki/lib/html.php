@@ -268,6 +268,11 @@ EOS;
 	$page_edit_data = <<<EOS
 <input type="hidden" class="page-in-edit" value="$in_editing_value" />
 EOS;
+	// CSRF token for JS APIs (page drop / etc.)
+	$h_csrf = htmlsc(pkwk_csrf_token());
+	$csrf_data = <<<EOS
+<input type="hidden" class="csrf-token" value="$h_csrf" />
+EOS;
 	// AutoTicketLink
 	$filtered_ticket_link_sites = array();
 	foreach ($ticket_link_sites as $s) {
@@ -320,6 +325,7 @@ $site_props
 $plugin_prop
 $page_name_data
 $page_edit_data
+$csrf_data
 $ticketlink_data
 $ticketlink_jira_data
 $ticketlink_jira_default_data

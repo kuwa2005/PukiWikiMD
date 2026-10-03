@@ -77,6 +77,7 @@ header('Content-Type: text/html; charset=' . CONTENT_CHARSET);
  <script type="text/javascript" src="<?php echo SKIN_DIR ?>main.js" defer></script>
  <script type="text/javascript" src="<?php echo SKIN_DIR ?>search2.js" defer></script>
  <script type="text/javascript" src="<?php echo SKIN_DIR ?>ref-popup.js" defer></script>
+ <script type="text/javascript" src="<?php echo SKIN_DIR ?>page-drop-md.js" defer></script>
 <?php if (arg_check('edit')) { ?>
  <script type="text/javascript" src="<?php echo SKIN_DIR ?>edit-dragdrop.js" defer></script>
 <?php } ?>

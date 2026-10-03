@@ -31,4 +31,13 @@ done
 # atomic rename 用に親ディレクトリも Web ユーザーが書けること
 chmod a+rwx pukiwiki || true
 
+# root 実行の CLI 等で作られたロック／キャッシュを救済（www-data が書けないと page_write が死ぬ）
+if [ "$(id -u)" = "0" ]; then
+	chown -R "$HOST_UID:$HOST_GID" \
+		pukiwiki/wiki pukiwiki/cache pukiwiki/backup \
+		pukiwiki/attach pukiwiki/counter pukiwiki/diff \
+		2>/dev/null || true
+	rm -f pukiwiki/cache/pkwk_chown.lock 2>/dev/null || true
+fi
+
 exec "$@"

@@ -559,6 +559,7 @@ function pkwk_edit_auth_mutation_plugins()
 		'comment', 'memo', 'insert', 'vote', 'article', 'paint',
 		'pcomment', 'attach', 'tracker', 'bugtrack', 'rename',
 		'newpage', 'template', 'backup', 'calendar_edit',
+		'importmd',
 	);
 }
 

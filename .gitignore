@@ -36,6 +36,13 @@ desktop.ini
 composer.phar
 .phpunit.result.cache
 
+# Node / Playwright
+/node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # ログ・一時ファイル
 *.log
 tmp/
