@@ -4,9 +4,10 @@
 
 ## 機能
 
-1. **ファイル → textarea** — OS からファイルをドロップすると `plugin=attach&pcmd=api` へ POST し、ページに添付。成功後 `#ref(ファイル名)` をカーソル位置に挿入。
+1. **ファイル → textarea** — OS からファイルをドロップすると `plugin=attach&pcmd=api` へ POST し、ページに添付。成功後 `#ref(ファイル名)` をカーソル位置に挿入。ドロップが画像のみの場合は `#ref(ファイル名,middle)`。
 2. **既存添付 → textarea** — ページ下部 `#attach` の各ファイルをドラッグし、textarea にドロップするとカーソル位置に `#ref` を挿入。
 3. **クリップボード画像 → textarea** — Ctrl+V / Cmd+V でクリップボードに画像（PNG/JPEG/GIF/WebP 等）がある場合、attach API でアップロードし `#ref(ファイル名,middle)` を挿入。テキストのみの貼り付けは従来どおり。ファイル名は `paste-YYYYMMDD-HHmmss.png` 形式（複数枚は `-1` 等の連番）。
+4. **未保存の新規ページ** — 初回保存前の編集画面でも、ページ名が有効かつ編集可能なら添付＋`#ref` 挿入が可能（ページ本体の作成は従来どおり保存時）。
 
 ## `#ref` 記法
 

@@ -241,8 +241,6 @@ function attach_upload($file, $page, $pass = NULL)
 		pkwk_common_headers();
 		echo('Query string (page name and/or file name) too long');
 		exit;
-	} else if (! is_page($page)) {
-		die_message('No such page');
 	} else if ($file['tmp_name'] == '' || ! is_uploaded_file($file['tmp_name'])) {
 		return array('result'=>FALSE);
 	} else if ($file['size'] > PLUGIN_ATTACH_MAX_FILESIZE) {
@@ -255,9 +253,10 @@ function attach_upload($file, $page, $pass = NULL)
 			'result'=>FALSE,
 			'msg'=>$_attach_messages['err_unsafe_filename']);
 	} else if (! is_pagename($page) || ($pass !== TRUE && ! is_editable($page))) {
+		// Allow attach during first edit of a not-yet-saved page (is_page may be false).
 		return array(
-			'result'=>FALSE,'
-			msg'=>$_attach_messages['err_noparm']);
+			'result'=>FALSE,
+			'msg'=>$_attach_messages['err_noparm']);
 	} else if (PLUGIN_ATTACH_UPLOAD_ADMIN_ONLY && $pass !== TRUE &&
 		  ! pkwk_admin_authorized($pass)) {
 		return array(

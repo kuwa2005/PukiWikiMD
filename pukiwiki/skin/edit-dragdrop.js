@@ -65,6 +65,9 @@ window.addEventListener && window.addEventListener('DOMContentLoaded', function 
     textarea.selectionStart = pos
     textarea.selectionEnd = pos
     textarea.focus()
+    if (typeof Event === 'function') {
+      textarea.dispatchEvent(new Event('input', { bubbles: true }))
+    }
   }
 
   function setStatus (statusEl, message, isError) {
@@ -229,7 +232,12 @@ window.addEventListener && window.addEventListener('DOMContentLoaded', function 
       var files = e.dataTransfer.files
       if (!files || files.length === 0) return
 
-      uploadFiles(Array.prototype.slice.call(files), textarea, pageName, uploadPath, csrfToken, statusEl)
+      var list = Array.prototype.slice.call(files)
+      var allImages = list.length > 0 && list.every(function (f) {
+        return f.type && f.type.indexOf('image/') === 0
+      })
+      // 画像のみのドロップは paste と同様に middle サイズで挿入
+      uploadFiles(list, textarea, pageName, uploadPath, csrfToken, statusEl, allImages ? 'middle' : '')
     })
   }
 

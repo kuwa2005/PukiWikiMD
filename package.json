@@ -5,7 +5,8 @@
   "description": "PukiWikiMD — Markdown-file wiki based on PukiWiki2026",
   "scripts": {
     "test:e2e": "playwright test",
-    "test:e2e:page-drop": "playwright test e2e/page-drop-md.spec.js"
+    "test:e2e:page-drop": "playwright test e2e/page-drop-md.spec.js",
+    "test:e2e:edit-image": "playwright test e2e/edit-image-insert.spec.js"
   },
   "repository": {
     "type": "git",
