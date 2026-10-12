@@ -36,6 +36,7 @@ v1.0.1 以降の変更（次回リリース候補）。対応 PR: [#88](https://
 
 ### Fixed
 
+- **PukiWiki 固定見出しアンカーの除去** — 取り込み／表示時に行末の `[#g527c66f]` 形式を落とす（`importmd`・`pkwk_markdown_to_html`）
 - **編集画面の画像貼り付け／D&D** — 未保存の新規ページでも attach API で添付可能に（`is_page` 必須チェックを撤廃し、編集可能なページ名なら許可）。画像のみドロップ時も paste と同様 `#ref(...,middle)` をカーソル位置へ挿入。`err_noparm` 応答のキー誤りを修正。e2e: `e2e/edit-image-insert.spec.js`
 - **凍結ページの comment / article がログイン必須になる問題**（PR #88, Closes #87）— SPAM-01 の `enforce_edit_auth_for_request()`・`check_editable()`・`page_write()` 防御層が guest POST プラグインも遮断していた問題を修正。ページ編集と comment / article 追加を分離
 

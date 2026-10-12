@@ -105,6 +105,11 @@ function plugin_importmd_create_page($page, $content, $refer = '', $leaf_title =
 	}
 	$content = str_replace("\r\n", "\n", $content);
 	$content = str_replace("\r", "\n", $content);
+	if (function_exists('pkwk_md_strip_fixed_heading_anchors')) {
+		$content = pkwk_md_strip_fixed_heading_anchors($content);
+	} else {
+		$content = preg_replace('/[ \t]*\[#([A-Za-z][\w-]*)\]/', '', $content);
+	}
 	if (trim($content) === '') {
 		$heading = ($leaf_title !== '') ? $leaf_title : $page;
 		$content = '# ' . $heading . "\n";

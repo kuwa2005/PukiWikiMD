@@ -67,6 +67,10 @@ check(strpos($html, 'class="toc"') !== FALSE, 'toc');
 check(strpos($html, 'class="toc"') < strpos($html, '<h1'), 'toc auto at top without [toc]');
 check(strpos($html, 'ogp-card') === FALSE, 'no ogp without flag');
 
+$anchored = pkwk_markdown_to_html("**日時：** 今日 [#g527c66f]\n\n## 見出し [#r7a7e12b]\n", FALSE);
+check(strpos($anchored, '[#') === FALSE, 'strip fixed heading anchors on render');
+check(strpos(pkwk_md_strip_fixed_heading_anchors('a [#abcdef0] b [#x1234567]'), '[#') === FALSE, 'strip fixed heading anchors helper');
+
 $manual_toc = pkwk_markdown_to_html(<<<'MD'
 # 題
 

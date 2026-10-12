@@ -161,6 +161,14 @@ function pkwk_md_set_frozen($text, $frozen)
 	return "---\n" . $fm . "\n---\n" . ($body === '' ? '' : $body);
 }
 
+/**
+ * Remove PukiWiki fixed-heading anchors like [#g527c66f] left in Markdown.
+ */
+function pkwk_md_strip_fixed_heading_anchors($text)
+{
+	return preg_replace('/[ \t]*\[#([A-Za-z][\w-]*)\]/', '', $text);
+}
+
 function pkwk_markdown_to_html($source, $with_ogp = FALSE)
 {
 	$text = is_array($source) ? implode('', $source) : strval($source);
@@ -169,6 +177,7 @@ function pkwk_markdown_to_html($source, $with_ogp = FALSE)
 	$text = preg_replace('/^#freeze\s*$/m', '', $text);
 	$text = preg_replace('/^#norelated\s*$/m', '', $text);
 	$text = preg_replace('/^#nofollow\s*$/m', '', $text);
+	$text = pkwk_md_strip_fixed_heading_anchors($text);
 
 	$protected = array();
 	$text = pkwk_md_protect_code($text, $protected);
@@ -618,7 +627,8 @@ function pkwk_md_convert_line($line, $page, $all_pages, &$frozen)
 		$id = '';
 		if (preg_match('/^(.*)\s*\[#([A-Za-z][\w-]*)\]\s*$/', $text, $h)) {
 			$text = rtrim($h[1]);
-			$id = ' {#' . $h[2] . '}';
+			// Drop fixed anchors on conversion; MD headings get ids from HeadingPermalink
+			$id = '';
 		}
 		return str_repeat('#', $level) . ' ' . pkwk_md_convert_inline($text) . $id;
 	}
@@ -654,6 +664,7 @@ function pkwk_md_convert_line($line, $page, $all_pages, &$frozen)
 		$line = substr($line, 1);
 	}
 	$line = pkwk_md_convert_inline($line);
+	$line = pkwk_md_strip_fixed_heading_anchors($line);
 	if ($br) $line .= '  ';
 	return $line;
 }
