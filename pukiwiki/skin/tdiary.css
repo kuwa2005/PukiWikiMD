@@ -39,9 +39,42 @@ a.external-link:not(.external-link-silent)::after {
   margin:3px;
 }
 
+pre, code, kbd, samp, tt {
+  font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
 pre {
   white-space:pre-wrap;
   word-wrap:break-word;
+  font-size:0.95em;
+  line-height:1.4;
+}
+
+/* Markdown GFM tables */
+table.md-table {
+  border-collapse:collapse;
+  border:1px solid #8899aa;
+  margin:0.75em 0;
+  max-width:100%;
+  empty-cells:show;
+  background-color:#fff;
+}
+table.md-table th,
+table.md-table td {
+  border:1px solid #8899aa;
+  padding:0.4em 0.75em;
+  vertical-align:top;
+}
+table.md-table th {
+  background-color:#e8eef5;
+  font-weight:bold;
+  text-align:center;
+}
+table.md-table thead th {
+  background-color:#dce6f0;
+}
+table.md-table tbody tr:nth-child(even) td {
+  background-color:#f7fafc;
 }
 
 thead td.style_td,

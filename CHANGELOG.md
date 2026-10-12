@@ -31,6 +31,8 @@ v1.0.1 以降の変更（次回リリース候補）。対応 PR: [#88](https://
 ### Added
 
 - **`#ref` マルチメディア埋め込み** — PDF（iframe）、音声（`<audio>`）、動画（`<video>`）、draw.io（`.drawio`/`.dio` を diagrams.net ビューアで描画）。docx/xlsx/pptx 等はブラウザ非対応のため種別付きダウンロードカード。`noimg` で従来リンクのみ。詳細: `docs/EDIT-DRAGDROP.md`（`plugin/ref.inc.php`、`skin/ref-media.js`、`skin/pukiwiki.css`）
+- **Markdown 表の罫線・整形済みの等幅フォント** — GFM 表に `md-table` クラスと罫線スタイル。`pre` / `code` 等を monospace に（`lib/markdown.php`、`skin/pukiwiki.css`、`skin/tdiary.css`）
+- **Markdown 目次** — `[toc]` があればその位置を優先。無いときだけ見出し 2 つ以上で先頭へ自動挿入
 
 ### Fixed
 

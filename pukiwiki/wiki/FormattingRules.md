@@ -6,8 +6,6 @@ frozen: true
 
 保存される本文は Markdown です。表示は [CommonMark](https://spec.commonmark.org/) に、表・取り消し線・タスクリスト・自動リンクを加えた GitHub Flavored Markdown、さらに脚注・定義リスト・見出し属性・ハイライト・front matter を足したものです。
 
-[toc]
-
 ## 見出し
 
 ```markdown
@@ -95,7 +93,8 @@ PukiWikiMD
 
 ## 目次
 
-見出し一覧を入れたい位置に、その行だけ次を書きます。
+- 本文に `[toc]` があるとき → **その位置**に目次を出します（先頭への自動挿入はしません）
+- `[toc]` が無いとき → 見出しが 2 つ以上あれば**先頭**に目次を自動挿入します
 
 ```markdown
 [toc]

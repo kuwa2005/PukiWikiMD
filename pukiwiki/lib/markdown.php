@@ -225,6 +225,7 @@ function pkwk_markdown_to_html($source, $with_ogp = FALSE)
 		$environment->addExtension(new League\CommonMark\Extension\ExternalLink\ExternalLinkExtension());
 		$converter = new League\CommonMark\MarkdownConverter($environment);
 		$html = $converter->convert($text)->getContent();
+		$html = pkwk_md_mark_tables($html);
 	} catch (Throwable $e) {
 		return '<p>このページの Markdown を表示できませんでした。</p>';
 	}
@@ -235,6 +236,19 @@ function pkwk_markdown_to_html($source, $with_ogp = FALSE)
 		$html = pkwk_ogp_decorate_html($html);
 	}
 	return $html;
+}
+
+/**
+ * Mark CommonMark/GFM tables so skin CSS can draw borders without
+ * affecting plugin tables restored later.
+ */
+function pkwk_md_mark_tables($html)
+{
+	return preg_replace(
+		'/<table\b(?![^>]*\bclass\s*=)/i',
+		'<table class="md-table"',
+		$html
+	);
 }
 
 /**
@@ -399,13 +413,23 @@ function pkwk_md_wikilink_to_md($inner)
 	return '[' . $label . '](' . $href . ')';
 }
 
+/**
+ * Insert TOC for Markdown pages.
+ * - If [toc] is present: place TOC at that marker (no auto-prepend).
+ * - Otherwise: prepend TOC when there are 2+ headings.
+ */
 function pkwk_md_insert_toc($html)
 {
-	if (strpos($html, '[toc]') === FALSE) return $html;
+	$manual = (bool) preg_match('/<p>\s*\[toc\]\s*<\/p>/', $html);
+
 	if (! preg_match_all('/<h([1-6])\b([^>]*)>(.*?)<\/h\1>/is', $html, $heads, PREG_SET_ORDER)) {
-		return str_replace('<p>[toc]</p>', '', $html);
+		if ($manual) {
+			$html = preg_replace('/<p>\s*\[toc\]\s*<\/p>/', '', $html);
+		}
+		return $html;
 	}
 	$items = '';
+	$count = 0;
 	foreach ($heads as $h) {
 		$id = '';
 		if (preg_match('/\bid="([^"]*)"/', $h[2], $idm)) $id = $idm[1];
@@ -413,9 +437,31 @@ function pkwk_md_insert_toc($html)
 		if ($label === '') continue;
 		$href = ($id === '') ? '' : ' href="#' . htmlsc($id) . '"';
 		$items .= '<li class="toc-l' . (int) $h[1] . '"><a' . $href . '>' . htmlsc($label) . '</a></li>';
+		$count++;
 	}
+	if ($items === '') {
+		if ($manual) {
+			$html = preg_replace('/<p>\s*\[toc\]\s*<\/p>/', '', $html);
+		}
+		return $html;
+	}
+
 	$toc = '<nav class="toc"><p class="toc-title">目次</p><ul>' . $items . '</ul></nav>';
-	return preg_replace('/<p>\s*\[toc\]\s*<\/p>/', $toc, $html, 1);
+
+	if ($manual) {
+		// Prefer explicit marker position; do not also auto-prepend
+		$replaced = preg_replace('/<p>\s*\[toc\]\s*<\/p>/', $toc, $html, 1, $n);
+		if ($n > 0) {
+			// Remove any extra [toc] markers
+			return preg_replace('/<p>\s*\[toc\]\s*<\/p>/', '', $replaced);
+		}
+		return preg_replace('/<p>\s*\[toc\]\s*<\/p>/', '', $html);
+	}
+
+	if ($count < 2) {
+		return $html;
+	}
+	return $toc . $html;
 }
 
 function pkwk_md_link_objects($page)

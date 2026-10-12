@@ -38,6 +38,8 @@ $html = pkwk_markdown_to_html(<<<'MD'
 | --- | --- |
 | A | **太** |
 
+## 詳細
+
 - [x] 完了
 - [ ] 未了
 
@@ -49,8 +51,6 @@ $html = pkwk_markdown_to_html(<<<'MD'
 
 用語
 :   説明
-
-[toc]
 MD
 , FALSE);
 
@@ -64,7 +64,32 @@ check(strpos($html, '<dl>') !== FALSE || strpos($html, '<dt>') !== FALSE, 'descr
 check(pkwk_md_convert_bracket('表示>https://example.com/x') === '[表示](https://example.com/x)', 'external bracket');
 check(pkwk_md_convert_bracket('Help|ヘルプ') === '[[Help|ヘルプ]]', 'wiki bracket');
 check(strpos($html, 'class="toc"') !== FALSE, 'toc');
+check(strpos($html, 'class="toc"') < strpos($html, '<h1'), 'toc auto at top without [toc]');
 check(strpos($html, 'ogp-card') === FALSE, 'no ogp without flag');
+
+$manual_toc = pkwk_markdown_to_html(<<<'MD'
+# 題
+
+前文です。
+
+[toc]
+
+## 節A
+
+本文A。
+
+## 節B
+
+本文B。
+MD
+, FALSE);
+$toc_pos = strpos($manual_toc, 'class="toc"');
+$h1_pos = strpos($manual_toc, '<h1');
+$h2_pos = strpos($manual_toc, '<h2');
+check($toc_pos !== FALSE, 'manual [toc] renders');
+check($h1_pos !== FALSE && $toc_pos > $h1_pos, 'manual [toc] not before first heading');
+check($h2_pos !== FALSE && $toc_pos < $h2_pos, 'manual [toc] before later sections');
+check(substr_count($manual_toc, 'class="toc"') === 1, 'manual [toc] no duplicate auto toc');
 
 $with = pkwk_markdown_to_html("https://ogp.me/\n", FALSE);
 check(strpos($with, 'ogp.me') !== FALSE, 'bare url becomes link');
