@@ -47,6 +47,7 @@ define('PLUGIN_REF_PDF', '/\.pdf$/i');
 define('PLUGIN_REF_AUDIO', '/\.(mp3|wav|wave|ogg|oga|m4a|aac|weba|flac)$/i');
 define('PLUGIN_REF_VIDEO', '/\.(mp4|webm|ogv|mov|m4v)$/i');
 define('PLUGIN_REF_DRAWIO', '/\.(drawio|dio)$/i');
+define('PLUGIN_REF_ODF', '/\.(od[tspfgcmi]|odm)$/i');
 define('PLUGIN_REF_OFFICE', '/\.(docx?|xlsx?|pptx?|od[tsp]|docm|xlsm|pptm|ppsx?)$/i');
 
 // Usage (a part of)
@@ -59,7 +60,7 @@ define('PLUGIN_REF_SIZE_PRESETS', 'small,middle,big,full');
  * Detect non-image media kind for inline preview.
  *
  * @param string $name File name or URL path
- * @return string ''|pdf|audio|video|drawio|office
+ * @return string ''|pdf|audio|video|drawio|odf|office
  */
 function ref_media_kind($name)
 {
@@ -79,6 +80,9 @@ function ref_media_kind($name)
 	}
 	if (preg_match(PLUGIN_REF_DRAWIO, $path)) {
 		return 'drawio';
+	}
+	if (preg_match(PLUGIN_REF_ODF, $path)) {
+		return 'odf';
 	}
 	if (preg_match(PLUGIN_REF_OFFICE, $path)) {
 		return 'office';
@@ -119,8 +123,13 @@ function ref_office_label($name)
 function ref_media_body($kind, $url, $title, $info, $params)
 {
 	$preset = ref_size_preset_class($params, FALSE);
-	if ($preset === '' && ($kind === 'pdf' || $kind === 'video' || $kind === 'drawio')) {
-		$preset = 'ref-middle';
+	// Default width: PDF / drawio → full; video → middle. Explicit small/middle/big/full wins.
+	if ($preset === '') {
+		if ($kind === 'pdf' || $kind === 'drawio') {
+			$preset = 'ref-full';
+		} else if ($kind === 'video') {
+			$preset = 'ref-middle';
+		}
 	}
 	$wrap_class = trim('ref-media ref-media--' . $kind . ($preset !== '' ? ' ' . $preset : ''));
 	$dl = '';

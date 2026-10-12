@@ -815,7 +815,12 @@ img.ref-full {
 .ref-media.ref-small { max-width:30%; }
 .ref-media.ref-middle { max-width:50%; }
 .ref-media.ref-big { max-width:75%; }
-.ref-media.ref-full { max-width:100%; }
+.ref-media.ref-full { max-width:100%; width:100%; }
+
+.ref-media--drawio.ref-full .ref-drawio-host {
+  width:100%;
+  min-height:20rem;
+}
 
 .ref-media-toolbar {
   margin:0 0 0.35em;
