@@ -28,6 +28,10 @@ v1.0.1 以降の変更（次回リリース候補）。対応 PR: [#88](https://
 
 - **編集画面のテキストエリア高さ**（PR #90）— `cmd=edit` で textarea がビューポート上下いっぱいに伸び、下部ツールバー（`#toolbar`）が常に見えるよう CSS を調整（`pukiwiki.css` / `tdiary.css`、flexbox + sticky toolbar）
 
+### Added
+
+- **`#ref` マルチメディア埋め込み** — PDF（iframe）、音声（`<audio>`）、動画（`<video>`）、draw.io（`.drawio`/`.dio` を diagrams.net ビューアで描画）。docx/xlsx/pptx 等はブラウザ非対応のため種別付きダウンロードカード。`noimg` で従来リンクのみ。詳細: `docs/EDIT-DRAGDROP.md`（`plugin/ref.inc.php`、`skin/ref-media.js`、`skin/pukiwiki.css`）
+
 ### Fixed
 
 - **編集画面の画像貼り付け／D&D** — 未保存の新規ページでも attach API で添付可能に（`is_page` 必須チェックを撤廃し、編集可能なページ名なら許可）。画像のみドロップ時も paste と同様 `#ref(...,middle)` をカーソル位置へ挿入。`err_noparm` 応答のキー誤りを修正。e2e: `e2e/edit-image-insert.spec.js`

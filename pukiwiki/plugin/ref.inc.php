@@ -40,13 +40,130 @@ define('PLUGIN_REF_DIRECT_ACCESS', FALSE); // FALSE or TRUE
 /////////////////////////////////////////////////
 
 // Image suffixes allowed
-define('PLUGIN_REF_IMAGE', '/\.(gif|png|jpe?g|swf)$/i');
+define('PLUGIN_REF_IMAGE', '/\.(gif|png|jpe?g|webp|apng|swf)$/i');
+
+// Browser-native / viewer embeds (noimg で従来のリンク表示に戻せる)
+define('PLUGIN_REF_PDF', '/\.pdf$/i');
+define('PLUGIN_REF_AUDIO', '/\.(mp3|wav|wave|ogg|oga|m4a|aac|weba|flac)$/i');
+define('PLUGIN_REF_VIDEO', '/\.(mp4|webm|ogv|mov|m4v)$/i');
+define('PLUGIN_REF_DRAWIO', '/\.(drawio|dio)$/i');
+define('PLUGIN_REF_OFFICE', '/\.(docx?|xlsx?|pptx?|od[tsp]|docm|xlsm|pptm|ppsx?)$/i');
 
 // Usage (a part of)
 define('PLUGIN_REF_USAGE', "([pagename/]attached-file-name[,parameters, ... ][,title])");
 
 // Responsive size presets (max-width % of container). See skin/pukiwiki.css .ref-* classes.
 define('PLUGIN_REF_SIZE_PRESETS', 'small,middle,big,full');
+
+/**
+ * Detect non-image media kind for inline preview.
+ *
+ * @param string $name File name or URL path
+ * @return string ''|pdf|audio|video|drawio|office
+ */
+function ref_media_kind($name)
+{
+	$path = $name;
+	if (strpos($name, '?') !== FALSE) {
+		$path = preg_replace('/\?.*$/', '', $name);
+	}
+	$path = preg_replace('/#.*$/', '', $path);
+	if (preg_match(PLUGIN_REF_PDF, $path)) {
+		return 'pdf';
+	}
+	if (preg_match(PLUGIN_REF_AUDIO, $path)) {
+		return 'audio';
+	}
+	if (preg_match(PLUGIN_REF_VIDEO, $path)) {
+		return 'video';
+	}
+	if (preg_match(PLUGIN_REF_DRAWIO, $path)) {
+		return 'drawio';
+	}
+	if (preg_match(PLUGIN_REF_OFFICE, $path)) {
+		return 'office';
+	}
+	return '';
+}
+
+/**
+ * Human label for Office / ODF downloads.
+ *
+ * @param string $name
+ * @return string
+ */
+function ref_office_label($name)
+{
+	$ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+	$map = array(
+		'doc' => 'Word', 'docx' => 'Word', 'docm' => 'Word',
+		'xls' => 'Excel', 'xlsx' => 'Excel', 'xlsm' => 'Excel',
+		'ppt' => 'PowerPoint', 'pptx' => 'PowerPoint', 'pptm' => 'PowerPoint',
+		'pps' => 'PowerPoint', 'ppsx' => 'PowerPoint',
+		'odt' => 'OpenDocument Text', 'ods' => 'OpenDocument Spreadsheet',
+		'odp' => 'OpenDocument Presentation',
+	);
+	return isset($map[$ext]) ? $map[$ext] : 'Document';
+}
+
+/**
+ * Build inline preview HTML for PDF / audio / video / drawio / office.
+ *
+ * @param string $kind
+ * @param string $url    Escaped URL for src/href
+ * @param string $title  Escaped title
+ * @param string $info   Escaped meta (size/date) for title attr
+ * @param array  $params ref params
+ * @return string
+ */
+function ref_media_body($kind, $url, $title, $info, $params)
+{
+	$preset = ref_size_preset_class($params, FALSE);
+	if ($preset === '' && ($kind === 'pdf' || $kind === 'video' || $kind === 'drawio')) {
+		$preset = 'ref-middle';
+	}
+	$wrap_class = trim('ref-media ref-media--' . $kind . ($preset !== '' ? ' ' . $preset : ''));
+	$dl = '';
+	if (! $params['nolink']) {
+		$dl = '<div class="ref-media-toolbar">' .
+			'<a class="ref-media-download" href="' . $url . '" title="' . $info . '">' .
+			htmlsc($title) . ' を開く</a></div>';
+	}
+
+	if ($kind === 'pdf') {
+		return '<div class="' . $wrap_class . '">' . $dl .
+			'<iframe class="ref-media-frame" src="' . $url .
+			'" title="' . $title . '" loading="lazy"></iframe></div>';
+	}
+	if ($kind === 'audio') {
+		return '<div class="' . $wrap_class . '">' . $dl .
+			'<audio class="ref-media-audio" controls preload="metadata" src="' . $url .
+			'">' . $title . '</audio></div>';
+	}
+	if ($kind === 'video') {
+		return '<div class="' . $wrap_class . '">' . $dl .
+			'<video class="ref-media-video" controls preload="metadata" src="' . $url .
+			'">' . $title . '</video></div>';
+	}
+	if ($kind === 'drawio') {
+		return '<div class="' . $wrap_class .
+			' ref-drawio" data-ref-drawio-src="' . $url .
+			'" data-ref-drawio-title="' . $title . '">' . $dl .
+			'<div class="ref-drawio-host"><p class="ref-media-loading">図を読み込み中…</p></div></div>';
+	}
+	if ($kind === 'office') {
+		$label = htmlsc(ref_office_label($title));
+		$icon = $params['noicon'] ? '' : FILE_ICON;
+		return '<div class="' . $wrap_class . ' ref-office-card">' .
+			'<div class="ref-office-icon">' . $icon . '</div>' .
+			'<div class="ref-office-meta">' .
+			'<span class="ref-office-type">' . $label . '</span> ' .
+			'<a href="' . $url . '" title="' . $info . '">' . $title . '</a>' .
+			'<p class="ref-office-note">ブラウザ内プレビュー非対応です。ダウンロードして開いてください。</p>' .
+			'</div></div>';
+	}
+	return '';
+}
 
 function plugin_ref_inline()
 {
@@ -396,8 +513,13 @@ function plugin_ref_body($args)
 			$params['_body'] = "<a href=\"$url2\" title=\"$title\">{$params['_body']}</a>";
 		}
 	} else {
-		$icon = $params['noicon'] ? '' : FILE_ICON;
-		$params['_body'] = "<a href=\"$url\" title=\"$info\">$icon$title</a>";
+		$media_kind = (! $params['noimg']) ? ref_media_kind($name) : '';
+		if ($media_kind !== '') {
+			$params['_body'] = ref_media_body($media_kind, $url, $title, $info, $params);
+		} else {
+			$icon = $params['noicon'] ? '' : FILE_ICON;
+			$params['_body'] = "<a href=\"$url\" title=\"$info\">$icon$title</a>";
+		}
 	}
 
 	return $params;

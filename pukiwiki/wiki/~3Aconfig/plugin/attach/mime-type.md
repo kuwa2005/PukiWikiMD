@@ -29,7 +29,8 @@ frozen: true
 | audio/x-ms-wma | wma asf | Windows Media オーディオ |  |
 | audio/vnd.rn-realaudio | ra ram | RealPlay オーディオ |  |
 | audio/midi | mid midi | MIDI オーディオ |  |
-| video/mp4 | mp4 | MP4 ビデオ |  |
+| video/mp4 | mp4 m4v | MP4 ビデオ |  |
+| video/webm | webm | WebM ビデオ |  |
 | video/mpeg | mpg mpeg | MPEG ビデオ |  |
 | video/ogg | ogv | Ogg ビデオ |  |
 | video/quicktime | mov qt | QuickTime ビデオ |  |
@@ -38,6 +39,7 @@ frozen: true
 | application/ogg | ogg | Ogg ファイル |  |
 | application/vnd.rn-realmedia | rm | RealPlay ビデオ |  |
 | application/pdf | pdf | PDF 文書 |  |
+| application/vnd.jgraph.mxfile | drawio dio | diagrams.net / draw.io 図 |  |
 | application/x-shockwave-flash | swf | フラッシュファイル |  |
 | application/xml | xml | XML 文書 |  |
 | application/json | json | JSON ファイル |  |

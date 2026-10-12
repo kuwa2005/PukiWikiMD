@@ -454,6 +454,30 @@ function attach_mime_content_type($filename, $displayname)
 			if (preg_match("/\.$ext$/i", $displayname)) return $_type;
 		}
 	}
+	// Fallback when mime-type config page is missing entries
+	$fallback = array(
+		'pdf' => 'application/pdf',
+		'mp3' => 'audio/mpeg',
+		'wav' => 'audio/wav',
+		'ogg' => 'audio/ogg',
+		'oga' => 'audio/ogg',
+		'm4a' => 'audio/mp4',
+		'aac' => 'audio/aac',
+		'mp4' => 'video/mp4',
+		'm4v' => 'video/mp4',
+		'webm' => 'video/webm',
+		'ogv' => 'video/ogg',
+		'mov' => 'video/quicktime',
+		'drawio' => 'application/vnd.jgraph.mxfile',
+		'dio' => 'application/vnd.jgraph.mxfile',
+		'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+		'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+	);
+	$ext = strtolower(pathinfo($displayname, PATHINFO_EXTENSION));
+	if ($ext !== '' && isset($fallback[$ext])) {
+		return $fallback[$ext];
+	}
 	return $type;
 }
 

@@ -41,7 +41,20 @@ PukiWiki 推奨形式は `pagename/filename` です（`plugin/ref.inc.php` 参�
 #ref(photo.png,640x480,popup,center)
 ```
 
-非画像の添付ファイルは従来どおりアイコン＋リンク表示です。
+## マルチメディアのインライン表示
+
+`#ref(ファイル名)` / `#ref(ファイル名,middle)` は拡張子に応じて表示が変わります（`noimg` で従来のリンクのみに戻せます）。
+
+| 種類 | 拡張子例 | 表示 |
+|------|----------|------|
+| 画像 | png / jpg / gif / webp | `<img>`（従来どおり。`small`/`middle`/`big`/`full`/`popup` 可） |
+| PDF | pdf | ページ内 iframe プレビュー＋「開く」リンク |
+| 音声 | mp3 / wav / ogg / m4a / aac 等 | `<audio controls>` |
+| 動画 | mp4 / webm / ogv / mov 等 | `<video controls>` |
+| draw.io | drawio / dio | diagrams.net ビューアで図を描画（CDN 要・ネット接続） |
+| Office 等 | docx / xlsx / pptx / odt 等 | **ブラウザ内プレビュー不可**。種別付きダウンロードカード |
+
+Office（Word / Excel / PowerPoint）はブラウザがネイティブ描画できないため、JPG のように埋め込めません。PDF・音声・動画・draw.io は埋め込み表示できます。
 
 ## セキュリティ
 
